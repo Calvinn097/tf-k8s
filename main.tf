@@ -73,9 +73,6 @@ resource "google_compute_instance" "kubenode2" {
 
     network_interface {
         network = google_compute_network.kubernetes_network.name
-        access_config{
-            nat_ip = google_compute_address.vm_static_ip.address
-        }
         
     }
 }
@@ -93,9 +90,6 @@ resource "google_compute_instance" "kubenode3" {
 
     network_interface {
         network = google_compute_network.kubernetes_network.name
-        access_config{
-            nat_ip = google_compute_address.vm_static_ip.address
-        }
         
     }
 }
@@ -113,9 +107,6 @@ resource "google_compute_instance" "kubenode4" {
 
     network_interface {
         network = google_compute_network.kubernetes_network.name
-        access_config{
-            nat_ip = google_compute_address.vm_static_ip.address
-        }
         
     }
 }
