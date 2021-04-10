@@ -6,7 +6,7 @@ terraform {
     required_providers{
         google = {
             source= "hashicorp/google"
-            version = "3.5.0"
+            version = "3.11.0"
         }
     }
 }
@@ -23,6 +23,7 @@ resource "google_compute_network" "kubernetes_network" {
 }
 
 resource "google_compute_instance" "kubenode1" {
+    desired_status = "TERMINATED"
     name            = "kubenode1"
     machine_type    = "e2-medium"
     tags            = ["kubernetes", "devops"]
@@ -42,6 +43,7 @@ resource "google_compute_instance" "kubenode1" {
     }
 }
 resource "google_compute_instance" "kubenode2" {
+    desired_status = "TERMINATED"
     name            = "kubenode2"
     machine_type    = "e2-medium"
     tags            = ["kubernetes", "devops"]
@@ -59,6 +61,7 @@ resource "google_compute_instance" "kubenode2" {
 }
 
 resource "google_compute_instance" "kubenode3" {
+    desired_status = "TERMINATED"
     name            = "kubenode3"
     machine_type    = "e2-medium"
     tags            = ["kubernetes", "devops"]
@@ -76,6 +79,7 @@ resource "google_compute_instance" "kubenode3" {
 }
 
 resource "google_compute_instance" "kubenode4" {
+    desired_status = "TERMINATED"
     name            = "kubenode4"
     machine_type    = "e2-medium"
     tags            = ["kubernetes", "devops"]
