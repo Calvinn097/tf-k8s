@@ -11,6 +11,24 @@ terraform {
     }
 }
 
+
+resource "google_compute_router" "nat-router-us-central1" {
+  name    = "nat-router-us-central1"
+  region  = "us-central1"
+  network  = google_compute_network.kubernetes_network.name
+
+}
+
+
+resource "google_compute_router_nat" "nat-config1" {
+  name                               = "nat-config1"
+  router                             = "${google_compute_router.nat-router-us-central1.name}"
+  region                             = "us-central1"
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+}
+
+
 provider "google"{
     credentials = file("/key/valued-base-310101-f49407bddcca.json")
     project = "valued-base-310101"
@@ -23,10 +41,14 @@ resource "google_compute_network" "kubernetes_network" {
 }
 
 resource "google_compute_instance" "kubenode1" {
-    desired_status = "TERMINATED"
+    desired_status = "RUNNING"
     name            = "kubenode1"
     machine_type    = "e2-medium"
+    can_ip_forward = "true"
     tags            = ["kubernetes", "devops"]
+    metadata = {
+        startup-script = "sudo ufw disable"
+    }
     
     boot_disk {
         initialize_params{
@@ -43,10 +65,14 @@ resource "google_compute_instance" "kubenode1" {
     }
 }
 resource "google_compute_instance" "kubenode2" {
-    desired_status = "TERMINATED"
+    desired_status = "RUNNING"
     name            = "kubenode2"
     machine_type    = "e2-medium"
+    can_ip_forward = "true"
     tags            = ["kubernetes", "devops"]
+    metadata = {
+        startup-script = "sudo ufw disable"
+    }
     
     boot_disk {
         initialize_params{
@@ -61,10 +87,14 @@ resource "google_compute_instance" "kubenode2" {
 }
 
 resource "google_compute_instance" "kubenode3" {
-    desired_status = "TERMINATED"
+    desired_status = "RUNNING"
     name            = "kubenode3"
     machine_type    = "e2-medium"
+    can_ip_forward = "true"
     tags            = ["kubernetes", "devops"]
+    metadata = {
+        startup-script = "sudo ufw disable"
+    }
     
     boot_disk {
         initialize_params{
@@ -79,10 +109,14 @@ resource "google_compute_instance" "kubenode3" {
 }
 
 resource "google_compute_instance" "kubenode4" {
-    desired_status = "TERMINATED"
+    desired_status = "RUNNING"
     name            = "kubenode4"
     machine_type    = "e2-medium"
+    can_ip_forward = "true"
     tags            = ["kubernetes", "devops"]
+    metadata={
+        startup-script = "sudo ufw disable"
+    }
     
     boot_disk {
         initialize_params{
@@ -96,6 +130,26 @@ resource "google_compute_instance" "kubenode4" {
     }
 }
 
+resource "google_compute_instance" "ansible"{
+    desired_status = "RUNNING"
+    name = "ansible"
+    machine_type = "e2-micro"
+    tags = ["devops", "ansible"]
+
+    boot_disk {
+        initialize_params{
+            image = var.instance_os
+        }
+    }
+    
+    network_interface{
+        network = google_compute_network.kubernetes_network.name
+        access_config{
+            nat_ip = google_compute_address.ansible_static_ip.address
+        }
+    }
+}
+
 
 resource "google_compute_address" "vm_static_ip" {
     name="terraform-static-ip"
@@ -103,6 +157,10 @@ resource "google_compute_address" "vm_static_ip" {
 
 resource "google_compute_address" "vip_address"{
     name="kubernetes-vip"
+}
+
+resource "google_compute_address" "ansible_static_ip"{
+    name = "ansible-static-ip"
 }
 
 resource "google_compute_firewall" "default"{
@@ -115,16 +173,18 @@ resource "google_compute_firewall" "default"{
         protocol = "tcp"
 
         # https://stackoverflow.com/questions/39293441/needed-ports-for-kubernetes-cluster
-        ports = ["80", "443", "8080", "1000-2000", "6443",  "10250-10255", "30000-32767", "179", "2379-2380"]
+        ports = ["67-68","22","80", "443", "8080", "1000-2000", "6443",  "10250-10255", "30000-32767", "179", "2379-2380", "8081", "9254"]
     }
 
     allow {
         protocol = "udp"
-        ports = ["8285", "8472"]
+        ports = ["8285", "8472", "22"]
     }
 
-    source_tags = ["kubernetes"]
+    source_tags = ["kubernetes", "devops"]
+    source_ranges = ["0.0.0.0/0"]
 }
+
 
 output "vip_addr" {
     depends_on = [
@@ -133,6 +193,14 @@ output "vip_addr" {
     value = google_compute_address.vip_address.address
     description = "The Public IP for load balancer"
     # sensitive = true
+}
+
+output "ansible_public_ip" {
+    depends_on = [
+        google_compute_address.ansible_static_ip
+    ]
+    value = google_compute_address.ansible_static_ip.address
+    description = "The Public IP for ansible"
 }
 
 output "public_ip_kubenode1" {
@@ -153,4 +221,7 @@ output "internal_ip_kubenode3"{
 }
 output "internal_ip_kubenode4"{
     value=google_compute_instance.kubenode4.network_interface[0].network_ip
+}
+output "internal_ip_ansible" {
+    value = google_compute_instance.ansible.network_interface[0].network_ip
 }
