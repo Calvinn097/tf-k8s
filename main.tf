@@ -69,9 +69,9 @@ resource "google_compute_http_health_check" "kubernetes" {
     # id                  = "projects/valued-base-310101/global/httpHealthChecks/load-balancer-hc"
     name                = "load-balancer-hc-kubernetes"
     
-    # port                = 6443
+    port                = 6443
     # project             = "valued-base-310101"
-    # request_path        = "/"
+    request_path        = "/livez?verbose"
     # self_link           = "https://www.googleapis.com/compute/v1/projects/valued-base-310101/global/httpHealthChecks/load-balancer-hc"
     # timeout_sec         = 5
     # unhealthy_threshold = 2
