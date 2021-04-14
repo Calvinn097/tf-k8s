@@ -11,6 +11,84 @@ terraform {
     }
 }
 
+# module.load_balancer.google_compute_firewall.default-lb-fw:
+resource "google_compute_firewall" "default-lb-fw" {
+    # creation_timestamp      = "2021-04-13T21:44:49.102-07:00"
+    # destination_ranges      = []
+    direction               = "INGRESS"
+    # disabled                = false
+    # enable_logging          = false
+    # id                      = "projects/valued-base-310101/global/firewalls/load-balancer-vm-service"
+    name                    = "load-balancer-vm-service"
+    network                 = google_compute_network.kubernetes_network.name
+    # priority                = 1000
+    # project                 = "valued-base-310101"
+    # self_link               = "https://www.googleapis.com/compute/v1/projects/valued-base-310101/global/firewalls/load-balancer-vm-service"
+    source_ranges           = [
+        "0.0.0.0/0",
+    ]
+    # source_service_accounts = []
+    # source_tags             = []
+    # target_service_accounts = []
+    target_tags             = [
+        "allow-lb-service",
+    ]
+
+    allow {
+        ports    = [
+            "6443",
+        ]
+        protocol = "tcp"
+    }
+}
+
+# module.load_balancer.google_compute_forwarding_rule.default:
+resource "google_compute_forwarding_rule" "kubernetes" {
+    # all_ports             = false
+    # creation_timestamp    = "2021-04-13T21:44:54.231-07:00"
+    # id                    = "projects/valued-base-310101/regions/us-central1/forwardingRules/load-balancer"
+    ip_address            = google_compute_address.vip_address.address
+    ip_protocol           = "TCP"
+    load_balancing_scheme = "EXTERNAL"
+    name                  = "load-balancer-kubernetes"
+    target = google_compute_target_pool.kubernetes.id
+    # network_tier          = "PREMIUM"
+    port_range            = "6443-6443"
+    # ports                 = []
+    # project               = "valued-base-310101"
+    region                = "us-central1"
+    # self_link             = "https://www.googleapis.com/compute/v1/projects/valued-base-310101/regions/us-central1/forwardingRules/load-balancer"
+    # target                = "https://www.googleapis.com/compute/v1/projects/valued-base-310101/regions/us-central1/targetPools/load-balancer"
+}
+
+# module.load_balancer.google_compute_http_health_check.default:
+resource "google_compute_http_health_check" "kubernetes" {
+    # check_interval_sec  = 5
+    # creation_timestamp  = "2021-04-13T21:44:49.008-07:00"
+    # healthy_threshold   = 2
+    # id                  = "projects/valued-base-310101/global/httpHealthChecks/load-balancer-hc"
+    name                = "load-balancer-hc-kubernetes"
+    
+    # port                = 6443
+    # project             = "valued-base-310101"
+    # request_path        = "/"
+    # self_link           = "https://www.googleapis.com/compute/v1/projects/valued-base-310101/global/httpHealthChecks/load-balancer-hc"
+    # timeout_sec         = 5
+    # unhealthy_threshold = 2
+}
+
+# module.load_balancer.google_compute_target_pool.default:
+resource "google_compute_target_pool" "kubernetes" {
+    health_checks    = [
+        google_compute_http_health_check.kubernetes.name
+    ]
+    instances        = [google_compute_instance.kubenode1.self_link, google_compute_instance.kubenode2.self_link]
+    name             = "load-balancer-target"
+    # project          = "valued-base-310101"
+    # region           = "us-central1"
+    # self_link        = "https://www.googleapis.com/compute/v1/projects/valued-base-310101/regions/us-central1/targetPools/load-balancer"
+    # session_affinity = "NONE"
+}
 
 resource "google_compute_router" "nat-router-us-central1" {
   name    = "nat-router-us-central1"
@@ -28,16 +106,16 @@ resource "google_compute_router_nat" "nat-config1" {
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }
 
-module "load_balancer" {
-#   source   = "load_balancer"
-  source       = "GoogleCloudPlatform/lb/google"
-  version      = "~> 2.0.0"
-  region       = "us-central1"
-  name         = "load-balancer"
-  service_port = 6443
-  target_tags  = ["allow-lb-service"]
-  network      = google_compute_network.kubernetes_network.name
-}
+# module "load_balancer" {
+# #   source   = "load_balancer"
+#   source       = "GoogleCloudPlatform/lb/google"
+#   version      = "~> 2.0.0"
+#   region       = "us-central1"
+#   name         = "load-balancer"
+#   service_port = 6443
+#   target_tags  = ["allow-lb-service"]
+#   network      = google_compute_network.kubernetes_network.name
+# }
 
 provider "google"{
     credentials = file("/key/valued-base-310101-f49407bddcca.json")
@@ -296,14 +374,14 @@ output "internal_ip_kubenode4"{
 output "internal_ip_ansible" {
     value = google_compute_instance.ansible.network_interface[0].network_ip
 }
-output "google_lb_ip"{
-    value = module.load_balancer.external_ip
-    # value = load_balancer.
-}
-output "google_lb_target"{
-    value = module.load_balancer.target_pool
-    # value = load_balancer
-}
+# output "google_lb_ip"{
+#     value = module.load_balancer.external_ip
+#     # value = load_balancer.
+# }
+# output "google_lb_target"{
+#     value = module.load_balancer.target_pool
+#     # value = load_balancer
+# }
 
 # output "internal_ip_haproxy1" {
 #     value = google_compute_instance.haproxy1.network_interface[0].network_ip
