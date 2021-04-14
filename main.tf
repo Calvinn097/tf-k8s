@@ -28,6 +28,16 @@ resource "google_compute_router_nat" "nat-config1" {
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }
 
+module "load_balancer" {
+#   source   = "load_balancer"
+  source       = "GoogleCloudPlatform/lb/google"
+  version      = "~> 2.0.0"
+  region       = "us-central1"
+  name         = "load-balancer"
+  service_port = 6443
+  target_tags  = ["allow-lb-service"]
+  network      = google_compute_network.kubernetes_network.name
+}
 
 provider "google"{
     credentials = file("/key/valued-base-310101-f49407bddcca.json")
@@ -45,7 +55,7 @@ resource "google_compute_instance" "kubenode1" {
     name            = "kubenode1"
     machine_type    = "e2-medium"
     can_ip_forward = "true"
-    tags            = ["kubernetes", "devops"]
+    tags            = ["kubernetes", "devops", "allow-lb-service"]
     metadata = {
         startup-script = "sudo ufw disable"
     }
@@ -69,7 +79,7 @@ resource "google_compute_instance" "kubenode2" {
     name            = "kubenode2"
     machine_type    = "e2-medium"
     can_ip_forward = "true"
-    tags            = ["kubernetes", "devops"]
+    tags            = ["kubernetes", "devops", "allow-lb-service"]
     metadata = {
         startup-script = "sudo ufw disable"
     }
@@ -150,6 +160,45 @@ resource "google_compute_instance" "ansible"{
     }
 }
 
+# resource "google_compute_instance" "haproxy1"{
+#     desired_status = "RUNNING"
+#     name = "haproxy1"
+#     machine_type = "e2-micro"
+#     tags = ["devops", "haproxy"]
+
+#     boot_disk {
+#         initialize_params{
+#             image = var.instance_os
+#         }
+#     }
+    
+#     network_interface{
+#         network = google_compute_network.kubernetes_network.name
+#         access_config{
+#             nat_ip = google_compute_address.haproxy1_static_ip.address
+#         }
+#     }
+# }
+
+# resource "google_compute_instance" "haproxy2"{
+#     desired_status = "RUNNING"
+#     name = "haproxy2"
+#     machine_type = "e2-micro"
+#     tags = ["devops", "haproxy"]
+
+#     boot_disk {
+#         initialize_params{
+#             image = var.instance_os
+#         }
+#     }
+    
+#     network_interface{
+#         network = google_compute_network.kubernetes_network.name
+#         access_config{
+#             nat_ip = google_compute_address.haproxy2_static_ip.address
+#         }
+#     }
+# }
 
 resource "google_compute_address" "vm_static_ip" {
     name="terraform-static-ip"
@@ -162,6 +211,14 @@ resource "google_compute_address" "vip_address"{
 resource "google_compute_address" "ansible_static_ip"{
     name = "ansible-static-ip"
 }
+
+# resource "google_compute_address" "haproxy1_static_ip"{
+#     name = "haproxy1-static-ip"
+# }
+
+# resource "google_compute_address" "haproxy2_static_ip"{
+#     name = "haproxy2-static-ip"
+# }
 
 resource "google_compute_firewall" "default"{
     name = "kubernetes-firewall"
@@ -202,7 +259,21 @@ output "ansible_public_ip" {
     value = google_compute_address.ansible_static_ip.address
     description = "The Public IP for ansible"
 }
+# output "haproxy1_public_ip" {
+#     depends_on = [
+#         google_compute_address.haproxy1_static_ip
+#     ]
+#     value = google_compute_address.haproxy1_static_ip.address
+#     description = "The Public IP for haproxy1"
+# }
 
+# output "haproxy2_public_ip" {
+#     depends_on = [
+#         google_compute_address.haproxy2_static_ip
+#     ]
+#     value = google_compute_address.haproxy2_static_ip.address
+#     description = "The Public IP for haproxy2"
+# }
 output "public_ip_kubenode1" {
     value = google_compute_instance.kubenode1.network_interface[0].access_config[0].nat_ip
 }
@@ -225,3 +296,18 @@ output "internal_ip_kubenode4"{
 output "internal_ip_ansible" {
     value = google_compute_instance.ansible.network_interface[0].network_ip
 }
+output "google_lb_ip"{
+    value = module.load_balancer.external_ip
+    # value = load_balancer.
+}
+output "google_lb_target"{
+    value = module.load_balancer.target_pool
+    # value = load_balancer
+}
+
+# output "internal_ip_haproxy1" {
+#     value = google_compute_instance.haproxy1.network_interface[0].network_ip
+# }
+# output "internal_ip_haproxy2" {
+#     value = google_compute_instance.haproxy2.network_interface[0].network_ip
+# }
