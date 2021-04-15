@@ -218,6 +218,28 @@ resource "google_compute_instance" "kubenode4" {
     }
 }
 
+resource "google_compute_instance" "kubenode5" {
+    desired_status = "RUNNING"
+    name            = "kubenode5"
+    machine_type    = "e2-medium"
+    can_ip_forward = "true"
+    tags            = ["kubernetes", "devops"]
+    metadata={
+        startup-script = "sudo ufw disable"
+    }
+    
+    boot_disk {
+        initialize_params{
+            image = var.instance_os
+        }
+    }
+
+    network_interface {
+        network = google_compute_network.kubernetes_network.name
+        
+    }
+}
+
 resource "google_compute_instance" "ansible"{
     desired_status = "RUNNING"
     name = "ansible"
