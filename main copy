@@ -82,7 +82,7 @@ resource "google_compute_target_pool" "kubernetes" {
     health_checks    = [
         google_compute_http_health_check.kubernetes.name
     ]
-    instances        = [google_compute_instance.node1.self_link, google_compute_instance.node2.self_link]
+    instances        = [google_compute_instance.kubenode1.self_link, google_compute_instance.kubenode2.self_link]
     name             = "load-balancer-target"
     # project          = "valued-base-310101"
     # region           = "us-central1"
@@ -128,8 +128,8 @@ resource "google_compute_network" "kubernetes_network" {
     name="kubernetes-network"
 }
 
-resource "google_compute_instance" "node1" {
-    desired_status = "RUNNING"
+resource "google_compute_instance" "kubenode1" {
+    desired_status = "TERMINATED"
     name            = "kubenode1"
     machine_type    = "e2-medium"
     can_ip_forward = "true"
@@ -152,8 +152,8 @@ resource "google_compute_instance" "node1" {
         
     }
 }
-resource "google_compute_instance" "node2" {
-    desired_status = "RUNNING"
+resource "google_compute_instance" "kubenode2" {
+    desired_status = "TERMINATED"
     name            = "kubenode2"
     machine_type    = "e2-medium"
     can_ip_forward = "true"
@@ -174,8 +174,8 @@ resource "google_compute_instance" "node2" {
     }
 }
 
-resource "google_compute_instance" "node3" {
-    desired_status = "RUNNING"
+resource "google_compute_instance" "kubenode3" {
+    desired_status = "TERMINATED"
     name            = "kubenode3"
     machine_type    = "e2-medium"
     can_ip_forward = "true"
@@ -196,8 +196,8 @@ resource "google_compute_instance" "node3" {
     }
 }
 
-resource "google_compute_instance" "node4" {
-    desired_status = "RUNNING"
+resource "google_compute_instance" "kubenode4" {
+    desired_status = "TERMINATED"
     name            = "kubenode4"
     machine_type    = "e2-medium"
     can_ip_forward = "true"
@@ -218,7 +218,7 @@ resource "google_compute_instance" "node4" {
     }
 }
 
-resource "google_compute_instance" "node5" {
+resource "google_compute_instance" "kubenode5" {
     desired_status = "RUNNING"
     name            = "kubenode5"
     machine_type    = "e2-medium"
@@ -396,31 +396,31 @@ resource "google_compute_firewall" "default"{
 }
 
 
-# output "vip_addr" {
-#     depends_on = [
-#         google_compute_address.vip_address
-#     ]
-#     value = google_compute_address.vip_address.address
-#     description = "The Public IP for load balancer"
-#     # sensitive = true
-# }
+output "vip_addr" {
+    depends_on = [
+        google_compute_address.vip_address
+    ]
+    value = google_compute_address.vip_address.address
+    description = "The Public IP for load balancer"
+    # sensitive = true
+}
 
-# output "ingress_vip_addr" {
-#     depends_on = [
-#         google_compute_address.ingress_vip_address
-#     ]
-#     value = google_compute_address.ingress_vip_address.address
-#     description = "The Public IP for ingress"
-#     # sensitive = true
-# }
+output "ingress_vip_addr" {
+    depends_on = [
+        google_compute_address.ingress_vip_address
+    ]
+    value = google_compute_address.ingress_vip_address.address
+    description = "The Public IP for ingress"
+    # sensitive = true
+}
 
-# output "ansible_public_ip" {
-#     depends_on = [
-#         google_compute_address.ansible_static_ip
-#     ]
-#     value = google_compute_address.ansible_static_ip.address
-#     description = "The Public IP for ansible"
-# }
+output "ansible_public_ip" {
+    depends_on = [
+        google_compute_address.ansible_static_ip
+    ]
+    value = google_compute_address.ansible_static_ip.address
+    description = "The Public IP for ansible"
+}
 # output "haproxy1_public_ip" {
 #     depends_on = [
 #         google_compute_address.haproxy1_static_ip
@@ -443,21 +443,21 @@ resource "google_compute_firewall" "default"{
 #     value = google_compute_instance.kubenode1.network_interface[0].access_config[0].network_tier
 # }
 
-# output "internal_ip_kubenode1"{
-#     value=google_compute_instance.kubenode1.network_interface[0].network_ip
-# }
-# output "internal_ip_kubenode2"{
-#     value=google_compute_instance.kubenode2.network_interface[0].network_ip
-# }
-# output "internal_ip_kubenode3"{
-#     value=google_compute_instance.kubenode3.network_interface[0].network_ip
-# }
-# output "internal_ip_kubenode4"{
-#     value=google_compute_instance.kubenode4.network_interface[0].network_ip
-# }
-# output "internal_ip_ansible" {
-#     value = google_compute_instance.ansible.network_interface[0].network_ip
-# }
+output "internal_ip_kubenode1"{
+    value=google_compute_instance.kubenode1.network_interface[0].network_ip
+}
+output "internal_ip_kubenode2"{
+    value=google_compute_instance.kubenode2.network_interface[0].network_ip
+}
+output "internal_ip_kubenode3"{
+    value=google_compute_instance.kubenode3.network_interface[0].network_ip
+}
+output "internal_ip_kubenode4"{
+    value=google_compute_instance.kubenode4.network_interface[0].network_ip
+}
+output "internal_ip_ansible" {
+    value = google_compute_instance.ansible.network_interface[0].network_ip
+}
 # output "google_lb_ip"{
 #     value = module.load_balancer.external_ip
 #     # value = load_balancer.
